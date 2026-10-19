@@ -56,6 +56,11 @@ export function LoadLibrary() {
           <input class="visually-hidden" type="file" accept=".json,application/json" onChange={onPick} disabled={busy} />
         </label>
       </div>
+      <div class="card">
+        <h2>New phone?</h2>
+        <p class="small">If you have a backup file from this app, restore it instead. It brings back your criteria, audits, records and photos.</p>
+        <a class="btn ghost block" href="#/settings">Restore from a backup</a>
+      </div>
     </main>
   );
 }
