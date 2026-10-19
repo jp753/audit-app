@@ -6,6 +6,7 @@ import { changeText } from './compare';
 import { formatPct, MATURITY_BANDS, scoreOf } from './scoring';
 import { criticalLine, NOT_ASSESSED, summaryLines, TO_BE_AGREED } from './summary';
 import { actionRows, ACTION_COLUMNS } from './actions';
+import { followUpCounts, followUpRows, type FollowUpStatus } from './followup';
 
 type Node = any;
 
@@ -220,6 +221,42 @@ export function buildReportDoc(input: ReportInput): Node {
     content.push({ text: 'These in-scope criteria were not rated and are not included in the score.', style: 'small', margin: [0, 0, 0, 4] });
     content.push({
       table: { headerRows: 0, widths: [24, '*', 70], body: r.unrated.map((c) => [{ text: c.id, bold: true }, { text: c.text, fontSize: 9 }, { text: NOT_ASSESSED, style: 'small' }]) },
+      layout: tableLayout,
+      fontSize: 9.5,
+    });
+  }
+
+  // Follow-up of the previous audit's actions (only when compared).
+  const fu = followUpRows(audit, prev);
+  if (fu.length) {
+    const fc = followUpCounts(fu);
+    const STATUS_COLOR: Record<FollowUpStatus, string> = {
+      Closed: '#1B7F3B', Improved: '#13838F', Open: '#C0262D', 'No longer applicable': GREY, 'Not assessed': GREY,
+    };
+    content.push(h1(`Follow-up of previous actions (${fu.length})`));
+    content.push({
+      text: `Gaps from the previous audit (${formatDate(prev!.date)}): ${fc.Closed} closed, ${fc.Improved} improved, ${fc.Open} still open` +
+        (fc['No longer applicable'] ? `, ${fc['No longer applicable']} no longer applicable` : '') +
+        (fc['Not assessed'] ? `, ${fc['Not assessed']} not assessed` : '') + '.',
+      margin: [0, 0, 0, 6],
+    });
+    content.push({
+      table: {
+        headerRows: 1,
+        dontBreakRows: true,
+        widths: [24, '*', 52, 120, 52, 62],
+        body: [
+          ['ID', 'Criterion', 'Previous', 'Previous action', 'Now', 'Status'].map((t) => th(t, brand.navy)),
+          ...fu.map((r) => [
+            { text: r.prev.id, bold: true },
+            { text: r.prev.text, fontSize: 9 },
+            ratingCell(r.prev.rating),
+            { text: r.prev.action || TO_BE_AGREED, fontSize: 9, italics: !r.prev.action, color: r.prev.action ? undefined : GREY },
+            r.now ? ratingCell(r.now) : { text: NOT_ASSESSED, style: 'small' },
+            { text: r.status, bold: true, fontSize: 9, color: STATUS_COLOR[r.status] },
+          ]),
+        ],
+      },
       layout: tableLayout,
       fontSize: 9.5,
     });

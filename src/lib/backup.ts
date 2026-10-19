@@ -40,12 +40,23 @@ export async function createBackup(appVersion: string, now = new Date()): Promis
   return { app: BACKUP_APP, format: BACKUP_FORMAT, appVersion, exportedAt: now.toISOString(), kv, audits, photos };
 }
 
-/** Backup as a downloadable file. Records the backup date for the home-screen reminder. */
-export async function exportBackupFile(appVersion: string): Promise<{ blob: Blob; filename: string }> {
+/** Backup as a file, without recording it as done (used before sharing). */
+export async function buildBackupFile(appVersion: string): Promise<{ blob: Blob; filename: string; exportedAt: string }> {
   const data = await createBackup(appVersion);
   const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-  await setKV(KV.lastBackup, data.exportedAt);
-  return { blob, filename: `TrainingAudit_Backup_${data.exportedAt.slice(0, 10)}.json` };
+  return { blob, filename: `TrainingAudit_Backup_${data.exportedAt.slice(0, 10)}.json`, exportedAt: data.exportedAt };
+}
+
+/** Records the backup date for the home-screen reminder. */
+export async function markBackedUp(exportedAt: string) {
+  await setKV(KV.lastBackup, exportedAt);
+}
+
+/** Backup as a downloadable file. Records the backup date for the home-screen reminder. */
+export async function exportBackupFile(appVersion: string): Promise<{ blob: Blob; filename: string }> {
+  const { blob, filename, exportedAt } = await buildBackupFile(appVersion);
+  await markBackedUp(exportedAt);
+  return { blob, filename };
 }
 
 export function parseBackup(text: string): BackupFile {

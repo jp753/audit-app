@@ -77,11 +77,23 @@ export interface Signature {
   signedAt?: string;
 }
 
+export interface PrevGap {
+  id: string;
+  text: string;
+  rating: Rating;
+  priority: Priority;
+  action: string;
+  owner: string;
+  due: string;
+}
+
 export interface PreviousSummary {
   auditId: string;
   date: string;
   pct: number | null;
   areaPct: Record<string, number | null>;
+  /** The previous audit's gaps and actions, for the follow-up section. */
+  gaps?: PrevGap[];
 }
 
 export interface Audit {

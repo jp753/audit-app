@@ -211,3 +211,13 @@ h3 { font-size: 17px; color: var(--navy); margin: 18px 0 8px; }
 .lockbadge { display: inline-flex; gap: 6px; align-items: center; background: #e6ebf1; color: var(--navy); font-weight: bold; padding: 6px 10px; border-radius: 8px; font-size: 14px; }
 .group h2 { margin-top: 20px; }
 .group h3 { margin: 10px 0 6px; font-size: 15px; color: var(--teal); text-transform: none; }
+.badge.fu-Closed { background: var(--met); color: #fff; }
+.badge.fu-Improved { background: var(--teal); color: #fff; }
+.badge.fu-Open { background: var(--notmet); color: #fff; }
+.prevbox { background: #eef3f8; border-left: 4px solid var(--navy); border-radius: 8px; padding: 8px 10px; margin: 0 0 12px; font-size: 14px; }
+.history-row { display: grid; grid-template-columns: 92px 1fr 44px; gap: 8px; align-items: center; min-height: 34px; font-size: 14px; }
+.history-row .hb { height: 14px; background: #e6ebf1; border-radius: 7px; overflow: hidden; }
+.history-row .hb > div { height: 100%; background: var(--teal); }
+.history-row.current { font-weight: bold; }
+.history-row.current .hb > div { background: var(--navy); }
+.danger-link { color: var(--notmet); border-color: var(--notmet); }

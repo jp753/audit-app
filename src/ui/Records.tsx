@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import type { Audit } from '../types';
 import { allAudits, deleteAudit, getAudit, getPhoto, saveAudit } from '../lib/db';
-import { auditTitle, formatDate, reauditFrom } from '../lib/audit';
+import { auditTitle, formatDate, reauditFrom, sameScope } from '../lib/audit';
+import { canShareFiles, shareableOnly } from '../lib/share';
+import { ShareButton } from './ShareButton';
 import { formatPct, scoreOf } from '../lib/scoring';
 import { downloadBlob } from '../lib/download';
 import { fileBase } from '../lib/filenames';
@@ -70,12 +72,17 @@ export function RecordView(props: { id: string }) {
   const [audit, setAudit] = useState<Audit | null>(null);
   const [busy, setBusy] = useState('');
   const [showAll, setShowAll] = useState(false);
+  const [history, setHistory] = useState<Audit[]>([]);
 
   useEffect(() => {
     getAudit(props.id).then((a) => {
       if (!a) return go('/records', true);
       if (a.status !== 'finished') return go(`/audit/${a.id}`, true);
       setAudit(a);
+      allAudits().then((all) => setHistory(
+        all.filter((x) => x.status === 'finished' && sameScope(x.setup, a.setup))
+          .sort((x, y) => x.setup.date.localeCompare(y.setup.date) || (x.finishedAt ?? '').localeCompare(y.finishedAt ?? '')),
+      ));
     });
   }, [props.id]);
 
@@ -148,8 +155,45 @@ export function RecordView(props: { id: string }) {
             <button class="btn teal block" disabled={!!busy} onClick={() => download('actionsXlsx')}>
               {busy === 'actionsXlsx' ? 'Creating…' : 'Action list (Excel)'}
             </button>
+            {canShareFiles() && (
+              <ShareButton
+                label="Share report and action list"
+                title={`Training System Audit – ${s.client} – ${s.site}`}
+                text={`Training System Audit report and action list – ${s.client}, ${s.site}, ${formatDate(s.date)}`}
+                disabled={!!busy}
+                prepare={async () => {
+                  const out = await import('../lib/outputs');
+                  const base = fileBase(audit!);
+                  const [r, ap, ax] = await Promise.all([out.reportPdf(audit!, brand), out.actionsPdf(audit!, brand), out.actionsXlsx(audit!, brand)]);
+                  // Excel is included only where the phone's share menu accepts it.
+                  return shareableOnly([
+                    new File([r], `${base}_Report.pdf`, { type: 'application/pdf' }),
+                    new File([ap], `${base}_Actions.pdf`, { type: 'application/pdf' }),
+                    new File([ax], `${base}_Actions.xlsx`, { type: ax.type }),
+                  ]);
+                }}
+              />
+            )}
           </div>
         </div>
+
+        {history.length > 1 && (
+          <div class="card">
+            <h3 style={{ marginTop: 0 }}>Score history ({history.length} audits)</h3>
+            <p class="small muted">All finished audits for this client, site and level.</p>
+            {history.map((h) => {
+              const pct = scoreOf(h).overall.pct;
+              return (
+                <button class={`history-row ${h.id === audit.id ? 'current' : ''}`} style={{ width: '100%', border: 0, background: 'none', padding: 0, textAlign: 'left', color: 'inherit' }}
+                  onClick={() => h.id !== audit.id && go(`/record/${h.id}`)} aria-label={`${formatDate(h.setup.date)} ${formatPct(pct)}`}>
+                  <span>{formatDate(h.setup.date)}</span>
+                  <span class="hb"><div style={{ width: `${pct ?? 0}%` }} /></span>
+                  <span style={{ textAlign: 'right' }}>{formatPct(pct)}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <ResultView audit={audit} result={result} prev={audit.previous} />
 

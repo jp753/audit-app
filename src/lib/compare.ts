@@ -14,7 +14,16 @@ export function summarise(prev: Audit): PreviousSummary {
   const r = scoreOf(prev);
   const areaPct: Record<string, number | null> = {};
   for (const a of r.areas) areaPct[a.code] = a.hasScope ? a.result.pct : null;
-  return { auditId: prev.id, date: prev.setup.date, pct: r.overall.pct, areaPct };
+  const gaps = r.gaps.map((g) => ({
+    id: g.criterion.id,
+    text: g.criterion.text,
+    rating: g.rating,
+    priority: g.priority,
+    action: g.response.action?.trim() ?? '',
+    owner: g.response.owner?.trim() ?? '',
+    due: g.response.due ?? '',
+  }));
+  return { auditId: prev.id, date: prev.setup.date, pct: r.overall.pct, areaPct, gaps };
 }
 
 export function changeText(now: number | null, before: number | null | undefined): string {

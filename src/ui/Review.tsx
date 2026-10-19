@@ -7,6 +7,7 @@ import { formatPct, scoreOf } from '../lib/scoring';
 import { confirmDialog, go, toast, TopBar } from './common';
 import { ResultView } from './ResultView';
 import { SignaturePad } from './SignaturePad';
+import { discardAudit } from './discard';
 
 export function Review(props: { id: string }) {
   const [audit, setAudit] = useState<Audit | null>(null);
@@ -115,6 +116,13 @@ export function Review(props: { id: string }) {
         <h3>Sign-off</h3>
         <SigBlock title="Lead assessor" sig={audit.signatures.assessor} onChange={(p) => setSig('assessor', p)} />
         <SigBlock title="Client contact" sig={audit.signatures.client} onChange={(p) => setSig('client', p)} />
+
+        <button class="btn ghost block danger-link" style={{ marginTop: 12 }} onClick={async () => {
+          clearTimeout(timer.current); timer.current = undefined;
+          if (!(await discardAudit(latest.current!))) await flush();
+        }}>
+          Discard this audit
+        </button>
       </main>
       <div class="bottombar">
         <button class="btn ghost" onClick={async () => { await flush(); go(backToAudit); }}>Back to audit</button>

@@ -3,7 +3,9 @@ import type { Brand } from '../types';
 import { DEFAULT_BRAND } from '../types';
 import { getKV, importLibrary, KV, setKV } from '../lib/db';
 import { downloadBlob } from '../lib/download';
-import { backupSummary, exportBackupFile, parseBackup, restoreBackup } from '../lib/backup';
+import { backupSummary, buildBackupFile, exportBackupFile, markBackedUp, parseBackup, restoreBackup } from '../lib/backup';
+import { canShareFiles, shareableBackup } from '../lib/share';
+import { ShareButton } from './ShareButton';
 import { formatDate } from '../lib/audit';
 import type { Library } from '../types';
 import { alertDialog, confirmDialog, go, Icon, toast, TopBar } from './common';
@@ -14,6 +16,7 @@ export function Settings() {
   const { library, brand, lastBackup, reload } = useApp();
   const [busy, setBusy] = useState('');
   const [persisted, setPersisted] = useState<boolean | null>(null);
+  const [pendingBackup, setPendingBackup] = useState('');
 
   useEffect(() => {
     navigator.storage?.persisted?.().then(setPersisted).catch(() => setPersisted(null));
@@ -126,12 +129,25 @@ export function Settings() {
       <main class="page">
         <section class="card">
           <h2>Backup and restore</h2>
-          <p class="small">Last backup: <b>{lastBackup ? formatDate(lastBackup) : 'never'}</b>. The backup is one file with all your audits, records, photos, settings and criteria library. Save a copy to your PC.</p>
+          <p class="small">Last backup: <b>{lastBackup ? formatDate(lastBackup) : 'never'}</b>. The backup is one file with all your audits, records, photos, settings and criteria library. Save a copy to your PC. A shared backup may arrive as a .txt file: that's normal, and it restores the same way.</p>
           <div style={{ display: 'grid', gap: 10 }}>
             <button class="btn primary block" onClick={backup} disabled={!!busy}>{busy === 'backup' ? 'Creating backup…' : 'Back up everything'}</button>
+            {canShareFiles() && (
+              <ShareButton
+                label="Back up and share (Drive, email…)"
+                title="Training audit backup"
+                disabled={!!busy}
+                prepare={async () => {
+                  const { blob, filename, exportedAt } = await buildBackupFile(__APP_VERSION__);
+                  setPendingBackup(exportedAt);
+                  return [shareableBackup(blob, filename)];
+                }}
+                onShared={async () => { if (pendingBackup) await markBackedUp(pendingBackup); await reload(); }}
+              />
+            )}
             <label class="btn ghost block" aria-disabled={!!busy}>
               <Icon.upload /> {busy === 'restore' ? 'Restoring…' : 'Restore from backup file'}
-              <input class="visually-hidden" type="file" accept=".json,application/json" onChange={onRestore} disabled={!!busy} />
+              <input class="visually-hidden" type="file" accept=".json,.txt,application/json,text/plain" onChange={onRestore} disabled={!!busy} />
             </label>
           </div>
         </section>

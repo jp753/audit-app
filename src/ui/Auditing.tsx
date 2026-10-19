@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import type { Audit, Criterion, CriterionResponse, Rating } from '../types';
+import type { Audit, Criterion, CriterionResponse, PrevGap, Rating } from '../types';
 import { RATINGS } from '../types';
-import { auditTitle, emptyResponse } from '../lib/audit';
+import { auditTitle, emptyResponse, formatDate } from '../lib/audit';
+import { summarise } from '../lib/compare';
 import { deletePhoto, getAudit, getPhoto, newId, saveAudit, savePhoto } from '../lib/db';
 import { compressImage } from '../lib/images';
 import { priorityFor, scoreOf } from '../lib/scoring';
@@ -14,6 +15,8 @@ export function Auditing(props: { id: string; area?: string }) {
   const latest = useRef<Audit | null>(null);
   const timer = useRef<number | undefined>(undefined);
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'error'>('saved');
+  // On a re-audit, last time's gaps and actions are shown on each card.
+  const [prevGaps, setPrevGaps] = useState<{ date: string; byId: Map<string, PrevGap> } | null>(null);
 
   useEffect(() => {
     getAudit(props.id).then((a) => {
@@ -21,6 +24,14 @@ export function Auditing(props: { id: string; area?: string }) {
       if (a.status === 'finished') return go(`/record/${a.id}`, true);
       latest.current = a;
       setAudit(a);
+      if (a.compareWithId) {
+        getAudit(a.compareWithId).then((p) => {
+          if (p && p.status === 'finished') {
+            const sum = summarise(p);
+            setPrevGaps({ date: sum.date, byId: new Map((sum.gaps ?? []).map((g) => [g.id, g])) });
+          }
+        });
+      }
     });
   }, [props.id]);
 
@@ -136,6 +147,8 @@ export function Auditing(props: { id: string; area?: string }) {
             auditId={audit.id}
             c={c}
             r={audit.responses[c.id] ?? emptyResponse()}
+            prev={prevGaps?.byId.get(c.id)}
+            prevDate={prevGaps?.date}
             onChange={(patch, delay) => updateResponse(c.id, patch, delay)}
           />
         ))}
@@ -162,6 +175,8 @@ function CriterionCard(props: {
   auditId: string;
   c: Criterion;
   r: CriterionResponse;
+  prev?: PrevGap;
+  prevDate?: string;
   onChange: (patch: Partial<CriterionResponse>, delay?: number) => void;
 }) {
   const { c, r, onChange } = props;
@@ -210,6 +225,12 @@ function CriterionCard(props: {
         {priority && <span class={`badge p-${priority}`}>{priority} priority</span>}
       </div>
       <p class="text">{c.text}</p>
+      {props.prev && (
+        <div class="prevbox">
+          <b>Last audit ({formatDate(props.prevDate ?? '')}): {props.prev.rating}</b>
+          <div>Action: {props.prev.action || 'To be agreed'}{props.prev.owner ? ` · Owner: ${props.prev.owner}` : ''}{props.prev.due ? ` · Due: ${formatDate(props.prev.due)}` : ''}</div>
+        </div>
+      )}
       <div class="ratings" role="radiogroup" aria-label={`Rating for ${c.id}`}>
         {RATINGS.map((rt) => (
           <button

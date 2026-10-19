@@ -4,12 +4,15 @@ import { formatPct } from '../lib/scoring';
 import { changeText } from '../lib/compare';
 import { formatDate } from '../lib/audit';
 import { criticalLine, summaryLines, TO_BE_AGREED } from '../lib/summary';
+import { followUpCounts, followUpRows } from '../lib/followup';
 
 /** Score tiles, summary, critical line, gaps and area table. Used on Review and Records. */
 export function ResultView(props: { audit: Audit; result: AuditResult; prev?: PreviousSummary | null; onGapClick?: (areaCode: string) => void }) {
   const { result: r, prev } = props;
   const o = r.overall;
   const crit = criticalLine(r);
+  const fu = followUpRows(props.audit, prev);
+  const fc = followUpCounts(fu);
 
   return (
     <>
@@ -53,6 +56,23 @@ export function ResultView(props: { audit: Audit; result: AuditResult; prev?: Pr
           </div>
         </button>
       ))}
+
+      {fu.length > 0 && (
+        <>
+          <h3>Follow-up of previous actions ({fu.length})</h3>
+          <p class="small">{fc.Closed} closed · {fc.Improved} improved · {fc.Open} still open{fc['Not assessed'] ? ` · ${fc['Not assessed']} not assessed` : ''}{fc['No longer applicable'] ? ` · ${fc['No longer applicable']} no longer applicable` : ''}</p>
+          {fu.map((f) => (
+            <div class="listitem" style={{ cursor: 'default' }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span class="cid" style={{ fontWeight: 'bold', color: 'var(--navy)' }}>{f.prev.id}</span>
+                <span class={`badge fu-${f.status.replace(/\s/g, '')}`}>{f.status}</span>
+                <span class="small muted">was {f.prev.rating} → now {f.now ?? 'not assessed'}</span>
+              </div>
+              <div class="small" style={{ marginTop: 4 }}><b>Previous action:</b> {f.prev.action || <span class="tba">{TO_BE_AGREED}</span>}</div>
+            </div>
+          ))}
+        </>
+      )}
 
       <h3>Results by area</h3>
       <table class="areatable">

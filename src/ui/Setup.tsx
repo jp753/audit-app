@@ -6,6 +6,7 @@ import { getAudit, saveAudit } from '../lib/db';
 import { inScope } from '../lib/library';
 import { go, TopBar } from './common';
 import { useApp } from './app-state';
+import { discardAudit } from './discard';
 
 /** Set-up form, used for a new audit (no id) or to edit a draft's details. */
 export function Setup(props: { id?: string }) {
@@ -100,6 +101,11 @@ export function Setup(props: { id?: string }) {
           <div class="notice warn">Changing the level changes which criteria count. Ratings you've already made are kept.</div>
         )}
         {tried && missing.length > 0 && <div class="notice bad">Please fill in: {missing.join(', ')}.</div>}
+        {audit && (
+          <button class="btn ghost block danger-link" style={{ marginTop: 24 }} onClick={() => discardAudit(audit)}>
+            Discard this audit
+          </button>
+        )}
       </main>
       <div class="bottombar">
         <button class="btn primary" onClick={save}>{audit ? 'Save details' : 'Start audit'}</button>
