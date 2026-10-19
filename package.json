@@ -1,0 +1,31 @@
+{
+  "name": "audit-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Training System Audit - offline mobile app",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "check-private": "node scripts/check-private.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jp753/audit-app.git"
+  },
+  "dependencies": {
+    "@fontsource/arimo": "^5.3.0",
+    "idb": "^8.0.4",
+    "preact": "^10.29.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "fake-indexeddb": "^6.2.6",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.4",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.5"
+  }
+}

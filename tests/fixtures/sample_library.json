@@ -1,0 +1,22 @@
+{
+  "library": "Sample library (made up, for tests only)",
+  "version": "0.1",
+  "author": "Test",
+  "scope_rules": {
+    "Site": ["Site", "Department", "All levels"],
+    "Department": ["Department", "All levels"],
+    "Sub-department": ["All levels"]
+  },
+  "areas": [
+    { "code": "P", "name": "Planning sample", "why": "Sample reason for the planning area." },
+    { "code": "Q", "name": "Quality sample", "why": "Sample reason for the quality area." }
+  ],
+  "criteria": [
+    { "id": "P1", "area": "P", "text": "Sample criterion one about planning", "scope": "Site", "critical": false, "refs": { "Sample Standard": "1.1" } },
+    { "id": "P2", "area": "P", "text": "Sample criterion two about planning", "scope": "Department", "critical": false, "refs": { "Sample Standard": "1.2" } },
+    { "id": "P3", "area": "P", "text": "Sample criterion three about planning", "scope": "All levels", "critical": false, "refs": {} },
+    { "id": "Q1", "area": "Q", "text": "Sample criterion one about quality", "scope": "All levels", "critical": true, "refs": { "Sample Standard": "2.1" } },
+    { "id": "Q2", "area": "Q", "text": "Sample criterion two about quality", "scope": "Site", "critical": true, "refs": {} },
+    { "id": "Q3", "area": "Q", "text": "Sample criterion three about quality", "scope": "All levels", "critical": false, "refs": {} }
+  ]
+}

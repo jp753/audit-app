@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dev-dist/
+*.log
+.DS_Store
+
+# PRIVATE: the real criteria library must never be committed
+audit_criteria.json
+**/audit_criteria*.json
+private/

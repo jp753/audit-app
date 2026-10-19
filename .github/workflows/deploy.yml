@@ -1,0 +1,37 @@
+name: Test and deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, ccr-6dd6e74d-vckz4q]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Safety check - no criteria file in the repository
+        run: |
+          if git ls-files | grep -i 'audit_criteria'; then
+            echo "The private criteria file must not be in the repository."; exit 1
+          fi
+      - run: npm test
+      - run: npm run build
+      - name: Publish the built app to the gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: true
